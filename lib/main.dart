@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
         leadingWidth: 100, // Ancho para que quepan los 2 botones
 
         // 1. QUITAMOS EL TEXTO "Scanner curp"
-        title: const Text(''),
+        //title: const Text(''),
 
         // BOTONES DERECHA: Cámara + 3 Puntitos
         actions: [
