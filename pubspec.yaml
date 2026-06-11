@@ -1,5 +1,5 @@
 name: contador
-description: App contador hecha en GitHub
+description: Scanner OCR desde GitHub
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,7 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.6
+  camera: ^0.11.0+1
+  google_mlkit_text_recognition: ^0.13.0
 
 flutter:
   uses-material-design: true
