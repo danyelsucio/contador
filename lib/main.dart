@@ -165,24 +165,30 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Future<void> _escanear() async {
-    if (_controller == null || isBusy) return;
-    setState(() => isBusy = true);
-    try {
-      final foto = await _controller!.takePicture();
-      final inputImage = InputImage.fromFilePath(foto.path);
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-      final RegExp curpRegex = RegExp(r'[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z][0-9]');
-      final match = curpRegex.firstMatch(recognizedText.text);
-      setState(() {
-        textoEscaneado = match!= null
-           ? "CURP: ${match.group(0)}"
-            : "No se encontró CURP";
-      });
-    } finally {
-      setState(() => isBusy = false);
-    }
+  if (_controller == null || isBusy) return;
+  setState(() => isBusy = true);
+  
+  try {
+    final foto = await _controller!.takePicture();
+    final inputImage = InputImage.fromFilePath(foto.path);
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    
+    // QUITAMOS EL REGEX Y MOSTRAMOS TODO EL TEXTO
+    setState(() {
+      if (recognizedText.text.isEmpty) {
+        textoEscaneado = "No se detectó texto";
+      } else {
+        textoEscaneado = recognizedText.text; // TODO EL TEXTO COMPLETO
+      }
+    });
+  } catch (e) {
+    setState(() {
+      textoEscaneado = "Error: $e";
+    });
+  } finally {
+    setState(() => isBusy = false);
   }
-
+  }
   @override
   void dispose() {
     _controller?.dispose();
