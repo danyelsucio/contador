@@ -14,3 +14,7 @@ dependencies:
 
 flutter:
   uses-material-design: true
+
+  # PEGA ESTO RESPETANDO LOS 2 ESPACIOS
+  assets:
+    - assets/images/
