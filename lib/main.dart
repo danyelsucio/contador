@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
-void main() {
+late List<CameraDescription> cameras;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
   runApp(const MyApp());
 }
 
@@ -9,57 +15,102 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Contador GitHub',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Contador desde GitHub'),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: ScannerPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+class ScannerPage extends StatefulWidget {
+  const ScannerPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ScannerPage> createState() => _ScannerPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ScannerPageState extends State<ScannerPage> {
+  CameraController? _controller;
+  final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  String textoEscaneado = 'Toca la cámara para escanear texto';
+  bool isProcessing = false;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    _controller = CameraController(cameras[0], ResolutionPreset.high, enableAudio: false);
+    await _controller!.initialize();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _escanearTexto() async {
+    if (_controller == null || !_controller!.value.isInitialized || isProcessing) return;
+    
+    setState(() => isProcessing = true);
+    
+    try {
+      final XFile foto = await _controller!.takePicture();
+      final inputImage = InputImage.fromFilePath(foto.path);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      
+      setState(() {
+        textoEscaneado = recognizedText.text.isEmpty 
+            ? 'No se detectó texto. Intenta de nuevo.' 
+            : recognizedText.text;
+        isProcessing = false;
+      });
+    } catch (e) {
+      setState(() {
+        textoEscaneado = 'Error: $e';
+        isProcessing = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    textRecognizer.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('Le has picado al botón estas veces:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            // BOTÓN CÁMARA ARRIBA
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: IconButton(
+                icon: isProcessing 
+                    ? const CircularProgressIndicator() 
+                    : const Icon(Icons.camera_alt, size: 40),
+                onPressed: _escanearTexto,
+              ),
+            ),
+            // TEXTO ESCANEADO EN TODA LA PANTALLA
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: SelectableText(
+                  textoEscaneado,
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Incrementar',
-        child: const Icon(Icons.add),
       ),
     );
   }
