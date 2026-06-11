@@ -127,10 +127,9 @@ class BeastieHome extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             // 6. IMAGEN DE BEASTIE
-            Image.network(
-              'https://upload.wikimedia.org/wikipedia/en/4/49/BSD_daemon.svg',
+            Image.asset(
+              'assets/images/beastie.jpg',
               height: 200,
-              color: Colors.red, // Lo pintamos rojo chido
             ),
           ],
         ),
