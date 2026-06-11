@@ -35,7 +35,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       // 1. APPBAR NUEVO CON LOS 4 BOTONES
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFB71C1C),
+        title: Text (
+          'Fiscalia de Dany el Sucio',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
         // BOTONES IZQUIERDA: Menú hamburguesa + Lupa
         leading: Row(
           mainAxisSize: MainAxisSize.min,
