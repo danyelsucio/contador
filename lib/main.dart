@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
-late List<CameraDescription> cameras;
+List<CameraDescription> cameras = [];
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
   runApp(const MyApp());
@@ -12,28 +12,25 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      home: ScannerScreen(),
       debugShowCheckedModeBanner: false,
-      home: ScannerPage(),
     );
   }
 }
 
-class ScannerPage extends StatefulWidget {
-  const ScannerPage({super.key});
-
+class ScannerScreen extends StatefulWidget {
   @override
-  State<ScannerPage> createState() => _ScannerPageState();
+  _ScannerScreenState createState() => _ScannerScreenState();
 }
 
-class _ScannerPageState extends State<ScannerPage> {
+class _ScannerScreenState extends State<ScannerScreen> {
   CameraController? _controller;
   final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-  String textoEscaneado = 'Toca la cámara para escanear texto';
-  bool isProcessing = false;
+  String textoEscaneado = "Apunta la cámara a la CURP y presiona el botón";
+  bool isBusy = false;
 
   @override
   void initState() {
@@ -42,32 +39,31 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Future<void> _initCamera() async {
-    _controller = CameraController(cameras[0], ResolutionPreset.high, enableAudio: false);
+    _controller = CameraController(cameras[0], ResolutionPreset.high);
     await _controller!.initialize();
     if (mounted) setState(() {});
   }
 
-  Future<void> _escanearTexto() async {
-    if (_controller == null || !_controller!.value.isInitialized || isProcessing) return;
-    
-    setState(() => isProcessing = true);
-    
+  Future<void> _escanear() async {
+    if (_controller == null || isBusy) return;
+    setState(() => isBusy = true);
+
     try {
-      final XFile foto = await _controller!.takePicture();
+      final foto = await _controller!.takePicture();
       final inputImage = InputImage.fromFilePath(foto.path);
       final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-      
+
       setState(() {
-        textoEscaneado = recognizedText.text.isEmpty 
-            ? 'No se detectó texto. Intenta de nuevo.' 
+        textoEscaneado = recognizedText.text.isEmpty
+           ? "No se detectó texto. Acerca más la cámara"
             : recognizedText.text;
-        isProcessing = false;
       });
     } catch (e) {
       setState(() {
-        textoEscaneado = 'Error: $e';
-        isProcessing = false;
+        textoEscaneado = "Error: $e";
       });
+    } finally {
+      setState(() => isBusy = false);
     }
   }
 
@@ -80,37 +76,35 @@ class _ScannerPageState extends State<ScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_controller == null || !_controller!.value.isInitialized) {
+    if (_controller == null ||!_controller!.value.isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // BOTÓN CÁMARA ARRIBA
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: IconButton(
-                icon: isProcessing 
-                    ? const CircularProgressIndicator() 
-                    : const Icon(Icons.camera_alt, size: 40),
-                onPressed: _escanearTexto,
+      appBar: AppBar(title: const Text('Scanner CURP')),
+      body: Column(
+        children: [
+          Expanded(
+            child: CameraPreview(_controller!), // <-- AQUÍ YA VES LA CÁMARA
+          ),
+          Container(
+            height: 150,
+            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            color: Colors.black,
+            child: SingleChildScrollView(
+              child: Text(
+                textoEscaneado,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
-            // TEXTO ESCANEADO EN TODA LA PANTALLA
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: SelectableText(
-                  textoEscaneado,
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: isBusy? null : _escanear,
+        child: isBusy
+           ? const CircularProgressIndicator(color: Colors.white)
+            : const Icon(Icons.camera_alt),
       ),
     );
   }
