@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.contador"
-    compileSdkVersion 34
+    compileSdkVersion 35
     ndkVersion "26.1.10909125"
 
     compileOptions {
@@ -39,21 +39,20 @@ android {
     defaultConfig {
         applicationId "com.example.contador"
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
     }
 
     buildTypes {
-    release {
-        signingConfig signingConfigs.debug
-        minifyEnabled false     // <-- Cambia true por false
-        shrinkResources false   // <-- Cambia true por false
-        // Comenta esta línea por si acaso
-        // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+        }
     }
-    }
+}
 
 flutter {
     source '../..'
