@@ -209,10 +209,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
           child: Container(
             margin: const EdgeInsets.all(20),
             padding: const EdgeInsets.all(12),
+            height: 250, // Más altura
+            width: double.infinity,
             color: Colors.black87,
-            child: Text(textoEscaneado, style: const TextStyle(color: Colors.white)),
+            child: SingleChildScrollView( // ESTO LE DA SCROLL
+              child: SelectableText( // Y ESTO LO HACE COPIABLE
+                textoEscaneado,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
           ),
-        ),
+       ),
         Align(
           alignment: Alignment.bottomRight,
           child: Padding(
