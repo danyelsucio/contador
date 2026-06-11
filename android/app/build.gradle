@@ -48,12 +48,12 @@ android {
     buildTypes {
     release {
         signingConfig signingConfigs.debug
-        minifyEnabled true
-        shrinkResources true
-        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        minifyEnabled false     // <-- Cambia true por false
+        shrinkResources false   // <-- Cambia true por false
+        // Comenta esta línea por si acaso
+        // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
     }
-}
 
 flutter {
     source '../..'
