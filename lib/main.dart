@@ -7,6 +7,7 @@ import 'fundamentos_page.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'drive_helper.dart';
 //imports
 import 'package:csv/csv.dart'; // ← Agrégalo al pubspec.yaml: csv: ^5.1
 
@@ -659,7 +660,46 @@ Future<void> _exportarCsv(Map<String, dynamic> datos, String volante) async {
   }
 }
 
- 
+ // ===== SUBIR A GOOGLE DRIVE =====
+Future<void> _subirVolanteNube(Map<String, dynamic> datos, String volante, String tipo) async {
+  try {
+    List<List<String>> rows = [['CAMPO', 'VALOR']];
+    datos.forEach((key, value) => rows.add([key, value?.toString() ?? 'Sin datos']));
+    String contenido = const ListToCsvConverter().convert(rows);
+    
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Subiendo a Drive...')));
+    await DriveHelper.subirArchivo('Volante_${volante}_$tipo.csv', contenido, 'text/csv');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Volante $volante subido a Google Drive')));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+  }
+}
+
+Future<void> _subirListaNube(String nombreLista) async {
+  try {
+    List<Map<String, dynamic>> datos;
+    if (nombreLista == 'PEDIDOS') datos = await DatabaseHelper.instance.getPedidos();
+    else if (nombreLista == 'RECIBIDOS') datos = await DatabaseHelper.instance.getRecibidos();
+    else datos = await DatabaseHelper.instance.getPendientes();
+
+    if (datos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay datos en $nombreLista')));
+      return;
+    }
+
+    List<List<String>> rows = [['FOLIO', 'VOLANTE', 'CARPETA', 'MESA', 'FECHA']];
+    for (var p in datos) {
+      rows.add([p['folio'], p['volante'], p['carpeta'], p['mesa'], p['fecha']]);
+    }
+    String contenido = const ListToCsvConverter().convert(rows);
+    
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Subiendo a Drive...')));
+    await DriveHelper.subirArchivo('${nombreLista}_${DateTime.now().millisecondsSinceEpoch}.csv', contenido, 'text/csv');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$nombreLista subido a Drive')));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+  }
+}
   
   // MOSTRAR DATOS DE CARPETA
   void _mostrarDatosCarpeta(String volante, Map<String, String> datos) {
