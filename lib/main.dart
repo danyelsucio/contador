@@ -282,14 +282,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) => ListTile(
                         title: Text(listaCampos[index]),
                         onTap: () {
-                          Navigator.pop(context);
-                          _mostrarDialogoCampo(listaCampos[index]);
+                         Navigator.pop(context);
+                         _mostrarDialogoCampo(listaCampos[index]);
                         },
                       ),
                     ),
                   );
                 }
+                if (value == 'Fundamentos') {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FundamentosPage())
+                 );
+                }
               },
+              
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 'Base de datos', child: Text('Base de datos')),
                 const PopupMenuItem(value: 'Campos', child: Text('Campos')),
