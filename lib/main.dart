@@ -222,7 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
               trailing: const Icon(Icons.folder),
               onTap: () async {
                 Navigator.pop(context);
-                //_mostrarDetallesVolante(volantes[index]);
+                String volanteKey = volantes[index]; // "1234"
+                Map<String, String> campos = await DatabaseHelper.instance.getCampos(volanteKey);
+                if (!mounted) return;
+                _mostrarDetallesVolante(campos, volanteKey); // ✅ Ahora sí: Map + String
               },
             ),
           ),
