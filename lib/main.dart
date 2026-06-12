@@ -439,12 +439,18 @@ void _mostrarListaRecibidos() async {
       ),
       actions: [
         TextButton(
-          onPressed: () => _exportarCsv(_completarCampos(carpeta), volante),
-          child: const Text('DESCARGAR CSV'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await _subirVolanteNube(_completarCampos(carpeta), volante, 'csv');
+          },
+          child: const Text('SUBIR CSV A DRIVE'),
         ),
         TextButton(
-          onPressed: () => _exportarExcel(_completarCampos(carpeta), volante),
-          child: const Text('DESCARGAR EXCEL'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await _subirVolanteNube(_completarCampos(carpeta), volante, 'excel');
+          },
+          child: const Text('SUBIR EXCEL A DRIVE'),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
