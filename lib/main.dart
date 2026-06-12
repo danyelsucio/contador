@@ -7,6 +7,8 @@ import 'fundamentos_page.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+//imports
+import 'package:csv/csv.dart'; // ← Agrégalo al pubspec.yaml: csv: ^5.1
 
 List<CameraDescription> cameras = [];
 
@@ -229,42 +231,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+///codigo pegado
 
-  // DIALOGO PARA VER DETALLES DEL VOLANTE + EXCEL
-Future<void> _mostrarDetallesVolante(String volante) async {
-  final db = await DatabaseHelper.instance.database;
-  final List<Map<String, dynamic>> datos = await db.query(
-    'carpetas',
-    where: 'volante =?',
-    whereArgs: [volante],
-  );
-
-  if (datos.isEmpty) return;
-  final Map<String, dynamic> carpeta = datos.first;
-
+  void _mostrarDetallesVolante(Map<String, dynamic> carpeta, String volante) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Text('Volante: $volante'),
       content: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: carpeta.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.key.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(entry.value?.toString()?? 'Sin datos'),
-                const SizedBox(height: 8),
-              ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: carpeta.entries.map((entry) { // ← Esto pinta TODOS los campos como en tu foto
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.key.toString().toUpperCase(), 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
+                  ),
+                  Text(
+                    entry.value?.toString() ?? 'Sin datos',
+                    style: const TextStyle(fontSize: 14)
+                  ),
+                  const Divider(height: 12),
+                ],
+              ),
             );
           }).toList(),
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => _exportarExcel(carpeta, volante),
+          onPressed: () => _exportarCsv(carpeta, volante), // ← NUEVO BOTÓN CSV
+          child: const Text('DESCARGAR CSV'),
+        ),
+        TextButton(
+          onPressed: () => _exportarExcel(carpeta, volante), // ← EL QUE YA TIENES
           child: const Text('DESCARGAR EXCEL'),
         ),
         TextButton(
@@ -274,8 +279,9 @@ Future<void> _mostrarDetallesVolante(String volante) async {
       ],
     ),
   );
-}
-
+  }
+  
+  
 
   // FUNCIÓN PARA CREAR Y GUARDAR EXCEL
 Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
@@ -309,7 +315,35 @@ Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
     );
   }
 }
+//la csv
+Future<void> _exportarCsv(Map<String, dynamic> datos, String volante) async {
+  try {
+    List<List<String>> rows = [];
+    rows.add(['CAMPO', 'VALOR']); // Encabezados
+    datos.forEach((key, value) {
+      rows.add([key, value?.toString() ?? 'Sin datos']);
+    });
 
+    String csv = const ListToCsvConverter().convert(rows);
+    
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}/Volante_$volante.csv';
+    final file = File(path);
+    await file.writeAsString(csv);
+
+    Navigator.pop(context); // Cierra el diálogo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('CSV guardado en: $path')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al exportar CSV: $e')),
+    );
+  }
+}
+
+ 
+  
   // MOSTRAR DATOS DE CARPETA
   void _mostrarDatosCarpeta(String volante, Map<String, String> datos) {
     showDialog(
