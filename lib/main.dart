@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
+import 'fundamentos_page.dart';
 
 List<CameraDescription> cameras = [];
 
