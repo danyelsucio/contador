@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               trailing: const Icon(Icons.folder),
               onTap: () async {
                 Navigator.pop(context);
-                _mostrarDetallesVolante(volantes[index]);
+                //_mostrarDetallesVolante(volantes[index]);
               },
             ),
           ),
