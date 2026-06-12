@@ -371,7 +371,19 @@ void _mostrarListaPedidos() async {
                 },
               ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR'))],
+      actions: [
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await _subirListaNube('PEDIDOS');
+          },
+          child: const Text('SUBIR A DRIVE'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CERRAR')
+        ),
+      ],
     ),
   );
 }
@@ -401,7 +413,16 @@ void _mostrarListaRecibidos() async {
                 },
               ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR'))],
+      actions: [
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await _subirListaNube('RECIBIDOS');
+          },
+          child: const Text('SUBIR A DRIVE'),
+        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR')),
+      ],
     ),
   );
 }
@@ -586,6 +607,13 @@ void _dialogoPendientes() async {
               ),
       ),
       actions: [
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await _subirListaNube('PENDIENTES');
+          },
+          child: const Text('SUBIR A DRIVE'),
+        ),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR')),
       ],
     ),
