@@ -270,33 +270,140 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // VER BASE DE DATOS
   void _mostrarBaseDatos() async {
-    List<String> volantes = await DatabaseHelper.instance.getTodosVolantes();
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Carpetas'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: volantes.length,
-            itemBuilder: (context, index) => ListTile(
-              title: Text(volantes[index]),
+  List<String> volantes = await DatabaseHelper.instance.getTodosVolantes();
+
+  // Contamos cuántos hay en cada tabla para mostrar badge
+  int totalPedidos = (await DatabaseHelper.instance.getPedidos()).length;
+  int totalRecibidos = (await DatabaseHelper.instance.getRecibidos()).length;
+  int totalPendientes = (await DatabaseHelper.instance.getPendientes()).length;
+
+  if (!mounted) return;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Base de datos'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            // LAS 3 CARPETAS FIJAS PRIMERO
+            ListTile(
+              leading: const Icon(Icons.send, color: Colors.blue),
+              title: const Text('PEDIDOS', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: Text('$totalPedidos', style: const TextStyle(fontSize: 16)),
+              onTap: () {
+                Navigator.pop(context);
+                _mostrarListaPedidos(); // Nueva función
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.inbox, color: Colors.green),
+              title: const Text('RECIBIDOS', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: Text('$totalRecibidos', style: const TextStyle(fontSize: 16)),
+              onTap: () {
+                Navigator.pop(context);
+                _mostrarListaRecibidos(); // Nueva función
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.pending_actions, color: Colors.orange),
+              title: const Text('PENDIENTES', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: Text('$totalPendientes', style: const TextStyle(fontSize: 16)),
+              onTap: () {
+                Navigator.pop(context);
+                _dialogoPendientes(); // Ya la tienes
+              },
+            ),
+            const Divider(thickness: 2),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('VOLANTES', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            ),
+            // LUEGO TODOS LOS VOLANTES
+           ...volantes.map((volante) => ListTile(
+              title: Text(volante),
               trailing: const Icon(Icons.folder),
               onTap: () async {
                 Navigator.pop(context);
-                String volanteKey = volantes[index]; // "1234"
+                String volanteKey = volante;
                 Map<String, String> campos = await DatabaseHelper.instance.getCampos(volanteKey);
                 if (!mounted) return;
-                _mostrarDetallesVolante(campos, volanteKey); // ✅ Ahora sí: Map + String
+                _mostrarDetallesVolante(campos, volanteKey);
               },
-            ),
-          ),
+            )).toList(),
+          ],
         ),
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CERRAR'),
+        ),
+      ],
+    ),
+  );
+}
+
+// NUEVA FUNCIÓN: Mostrar lista de Pedidos
+void _mostrarListaPedidos() async {
+  List<Map<String, dynamic>> pedidos = await DatabaseHelper.instance.getPedidos();
+  if (!mounted) return;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Pedidos: ${pedidos.length}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: pedidos.isEmpty
+           ? const Text('No hay pedidos registrados')
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: pedidos.length,
+                itemBuilder: (context, index) {
+                  var p = pedidos[index];
+                  return ListTile(
+                    title: Text('Folio: ${p['folio']}'),
+                    subtitle: Text('Vol: ${p['volante']} | Carp: ${p['carpeta']} | Mesa: ${p['mesa']}'),
+                    leading: const Icon(Icons.send, color: Colors.blue),
+                  );
+                },
+              ),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR'))],
+    ),
+  );
+}
+
+// NUEVA FUNCIÓN: Mostrar lista de Recibidos
+void _mostrarListaRecibidos() async {
+  List<Map<String, dynamic>> recibidos = await DatabaseHelper.instance.getRecibidos();
+  if (!mounted) return;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Recibidos: ${recibidos.length}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: recibidos.isEmpty
+           ? const Text('No hay carpetas recibidas')
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: recibidos.length,
+                itemBuilder: (context, index) {
+                  var r = recibidos[index];
+                  return ListTile(
+                    title: Text('Folio: ${r['folio']}'),
+                    subtitle: Text('Vol: ${r['volante']} | Carp: ${r['carpeta']} | Mesa: ${r['mesa']}'),
+                    leading: const Icon(Icons.inbox, color: Colors.green),
+                  );
+                },
+              ),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR'))],
+    ),
+  );
+}
 
 ///codigo pegado
 
