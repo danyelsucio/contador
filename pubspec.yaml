@@ -2,6 +2,9 @@ name: contador
 description: Scanner OCR desde GitHub
 publish_to: 'none'
 version: 1.0.0+1
+shared_preferences: ^2.2.2
+excel: ^4.0.2
+path_provider: ^2.1.2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
