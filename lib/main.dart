@@ -219,9 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text(volantes[index]),
               trailing: const Icon(Icons.folder),
               onTap: () async {
-                Map<String,String> datos = await DatabaseHelper.instance.getCampos(volantes[index]);
                 Navigator.pop(context);
-                _mostrarDatosCarpeta(volantes[index], datos);
+                _mostrarDetallesVolante(volantes[index]);
               },
             ),
           ),
@@ -229,6 +228,77 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+
+  // DIALOGO PARA VER DETALLES DEL VOLANTE + EXCEL
+Future<void> _mostrarDetallesVolante(String volante) async {
+  final db = await DatabaseHelper.instance.database;
+  final List<Map<String, dynamic>> datos = await db.query(
+    'carpetas',
+    where: 'volante =?',
+    whereArgs: [volante],
+  );
+
+  if (datos.isEmpty) return;
+  final Map<String, dynamic> carpeta = datos.first;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Volante: $volante'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: carpeta.entries.map((entry) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.key.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(entry.value?.toString()?? 'Sin datos'),
+                const SizedBox(height: 8),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => _exportarExcel(carpeta, volante),
+          child: const Text('DESCARGAR EXCEL'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CERRAR'),
+        ),
+      ],
+    ),
+  );
+}
+
+// FUNCIÓN PARA CREAR Y GUARDAR EXCEL
+Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
+  var excel = Excel.createExcel();
+  Sheet sheet = excel['Volante_$volante'];
+
+  sheet.appendRow(['CAMPO', 'VALOR']);
+  datos.forEach((key, value) {
+    sheet.appendRow([key, value?.toString()?? 'Sin datos']);
+  });
+
+  final directory = await getApplicationDocumentsDirectory();
+  final path = '${directory.path}/Volante_$volante.xlsx';
+  final fileBytes = excel.encode();
+
+  File(path)
+   ..createSync(recursive: true)
+   ..writeAsBytesSync(fileBytes!);
+
+  Navigator.pop(context);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Excel guardado en Documents')),
+  );
+}
 
   // MOSTRAR DATOS DE CARPETA
   void _mostrarDatosCarpeta(String volante, Map<String, String> datos) {
