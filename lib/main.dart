@@ -245,19 +245,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: carpeta.entries.map((entry) { // ← Esto pinta TODOS los campos como en tu foto
+          children: listaCampos.map((campo) { // ← AQUÍ ESTÁ LA MAGIA
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    entry.key.toString().toUpperCase(), 
+                    campo.toUpperCase(),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
                   ),
                   Text(
-                    entry.value?.toString() ?? 'Sin datos',
-                    style: const TextStyle(fontSize: 14)
+                    carpeta[campo]?.toString()?? 'Sin datos', // ← Si no existe, pone "Sin datos"
+                    style: const TextStyle(fontSize: 14, color: Colors.black87)
                   ),
                   const Divider(height: 12),
                 ],
@@ -268,11 +268,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         TextButton(
-          onPressed: () => _exportarCsv(carpeta, volante), // ← NUEVO BOTÓN CSV
+          onPressed: () => _exportarCsv(_completarCampos(carpeta), volante),
           child: const Text('DESCARGAR CSV'),
         ),
         TextButton(
-          onPressed: () => _exportarExcel(carpeta, volante), // ← EL QUE YA TIENES
+          onPressed: () => _exportarExcel(_completarCampos(carpeta), volante),
           child: const Text('DESCARGAR EXCEL'),
         ),
         TextButton(
@@ -282,9 +282,16 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     ),
   );
+}
+
+// FUNCIÓN NUEVA: Rellena los campos faltantes para Excel/CSV
+Map<String, dynamic> _completarCampos(Map<String, dynamic> carpeta) {
+  Map<String, dynamic> completo = {};
+  for (var campo in listaCampos) {
+    completo[campo] = carpeta[campo]?? 'Sin datos';
   }
-  
-  
+  return completo;
+}
 
   // FUNCIÓN PARA CREAR Y GUARDAR EXCEL
 Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
