@@ -51,6 +51,24 @@ class DatabaseHelper {
         valor TEXT,
         FOREIGN KEY (volante) REFERENCES carpetas (volante)
       )
+    ''');// agregare lo de pedidos
+    await db.execute('''
+      CREATE TABLE pedidos (
+        folio TEXT PRIMARY KEY NOT NULL,
+        volante TEXT NOT NULL,
+        carpeta TEXT NOT NULL,
+        mesa TEXT NOT NULL,
+        fecha TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE recibidos (
+        folio TEXT PRIMARY KEY NOT NULL,
+        volante TEXT NOT NULL,
+        carpeta TEXT NOT NULL,
+        mesa TEXT NOT NULL,
+        fecha TEXT
+      )
     ''');
   }
 
@@ -84,7 +102,53 @@ class DatabaseHelper {
     final db = await instance.database;
     final result = await db.query('carpetas', orderBy: 'id DESC');
     return result.map((row) => row['volante'] as String).toList();
-  }
+  }//agregare tres funciones
+  // PEDIDOS
+Future<int> addPedido(String folio, String volante, String carpeta, String mesa) async {
+  final db = await instance.database;
+  return await db.insert(
+    'pedidos',
+    {'folio': folio, 'volante': volante, 'carpeta': carpeta, 'mesa': mesa, 'fecha': DateTime.now().toString()},
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+Future<Map<String, dynamic>?> getPedidoPorFolio(String folio) async {
+  final db = await instance.database;
+  final result = await db.query('pedidos', where: 'folio =?', whereArgs: [folio]);
+  if (result.isNotEmpty) return result.first;
+  return null;
+}
+
+// RECIBIDOS
+Future<int> addRecibido(String folio, String volante, String carpeta, String mesa) async {
+  final db = await instance.database;
+  return await db.insert(
+    'recibidos',
+    {'folio': folio, 'volante': volante, 'carpeta': carpeta, 'mesa': mesa, 'fecha': DateTime.now().toString()},
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+Future<List<Map<String, dynamic>>> getPedidos() async {
+  final db = await instance.database;
+  return await db.query('pedidos', orderBy: 'fecha DESC');
+}
+
+Future<List<Map<String, dynamic>>> getRecibidos() async {
+  final db = await instance.database;
+  return await db.query('recibidos', orderBy: 'fecha DESC');
+}
+
+// PENDIENTES = Pedidos - Recibidos
+ Future<List<Map<String, dynamic>>> getPendientes() async {
+   final db = await instance.database;
+   return await db.rawQuery('''
+     SELECT p.* FROM pedidos p
+     LEFT JOIN recibidos r ON p.folio = r.folio
+     WHERE r.folio IS NULL
+   ''');
+ }
 }
 
 // ============ APP ============
@@ -284,6 +348,136 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 }
 
+  // DIALOGO PEDIDOS - Llenar 4 campos
+void _dialogoPedidos() {
+  String volante = '', carpeta = '', folio = '', mesa = '';
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Nuevo Pedido'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(decoration: const InputDecoration(labelText: 'Volante'), onChanged: (v) => volante = v),
+            TextField(decoration: const InputDecoration(labelText: 'Carpeta'), onChanged: (v) => carpeta = v),
+            TextField(decoration: const InputDecoration(labelText: 'Folio'), onChanged: (v) => folio = v),
+            TextField(decoration: const InputDecoration(labelText: 'Mesa'), onChanged: (v) => mesa = v),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+        TextButton(
+          onPressed: () async {
+            if (folio.isEmpty || volante.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Folio y Volante obligatorios')));
+              return;
+            }
+            await DatabaseHelper.instance.addPedido(folio, volante, carpeta, mesa);
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pedido $folio guardado')));
+          },
+          child: const Text('GUARDAR'),
+        ),
+      ],
+    ),
+  );
+}
+
+// DIALOGO RECIBIDOS - Solo folio, autocompleta resto
+void _dialogoRecibidos() {
+  String folio = '';
+  String volante = '', carpeta = '', mesa = '';
+  bool encontrado = false;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Recibir Carpeta'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Folio'),
+                  onChanged: (v) async {
+                    folio = v;
+                    var pedido = await DatabaseHelper.instance.getPedidoPorFolio(v);
+                    setDialogState(() {
+                      if (pedido!= null) {
+                        volante = pedido['volante'];
+                        carpeta = pedido['carpeta'];
+                        mesa = pedido['mesa'];
+                        encontrado = true;
+                      } else {
+                        volante = carpeta = mesa = '';
+                        encontrado = false;
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                if (encontrado)...[
+                  Text('Volante: $volante', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Carpeta: $carpeta'),
+                  Text('Mesa: $mesa'),
+                ] else if (folio.isNotEmpty)
+                  const Text('Carpeta no pedida', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+            TextButton(
+              onPressed: encontrado? () async {
+                await DatabaseHelper.instance.addRecibido(folio, volante, carpeta, mesa);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Folio $folio recibido')));
+              } : null,
+              child: const Text('RECIBIR'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+// DIALOGO PENDIENTES - Compara pedidos vs recibidos
+void _dialogoPendientes() async {
+  List<Map<String, dynamic>> pendientes = await DatabaseHelper.instance.getPendientes();
+  if (!mounted) return;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Pendientes: ${pendientes.length}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: pendientes.isEmpty
+           ? const Text('No hay pendientes. Todo recibido ✅')
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: pendientes.length,
+                itemBuilder: (context, index) {
+                  var p = pendientes[index];
+                  return ListTile(
+                    title: Text('Folio: ${p['folio']}'),
+                    subtitle: Text('Vol: ${p['volante']} | Carp: ${p['carpeta']} | Mesa: ${p['mesa']}'),
+                    leading: const Icon(Icons.warning, color: Colors.orange),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CERRAR')),
+      ],
+    ),
+  );
+}
+
 // FUNCIÓN NUEVA: Rellena los campos faltantes para Excel/CSV
 Map<String, dynamic> _completarCampos(Map<String, dynamic> carpeta) {
   Map<String, dynamic> completo = {};
@@ -445,10 +639,10 @@ Future<void> _exportarCsv(Map<String, dynamic> datos, String volante) async {
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Seleccionaste: $value')),
-              );
+            onSelected: (value) async {
+              if (value == 'Pedidos') _dialogoPedidos();
+              if (value == 'Recibidos') _dialogoRecibidos();
+              if (value == 'Pendientes') _dialogoPendientes();
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'Pedidos', child: Text('Pedidos')),
