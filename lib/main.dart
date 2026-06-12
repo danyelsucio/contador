@@ -276,28 +276,38 @@ Future<void> _mostrarDetallesVolante(String volante) async {
   );
 }
 
-// FUNCIÓN PARA CREAR Y GUARDAR EXCEL
+
+  // FUNCIÓN PARA CREAR Y GUARDAR EXCEL
 Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
   var excel = Excel.createExcel();
   Sheet sheet = excel['Volante_$volante'];
-
-  sheet.appendRow(['CAMPO', 'VALOR']);
+  
+  // CORRECCIÓN: Usar TextCellValue para excel 4.0.6
+  sheet.appendRow([
+    TextCellValue('CAMPO'), 
+    TextCellValue('VALOR')
+  ]);
+  
   datos.forEach((key, value) {
-    sheet.appendRow([key, value?.toString()?? 'Sin datos']);
+    sheet.appendRow([
+      TextCellValue(key), 
+      TextCellValue(value?.toString() ?? 'Sin datos')
+    ]);
   });
 
   final directory = await getApplicationDocumentsDirectory();
-  final path = '${directory.path}/Volante_$volante.xlsx';
-  final fileBytes = excel.encode();
-
-  File(path)
-   ..createSync(recursive: true)
-   ..writeAsBytesSync(fileBytes!);
-
-  Navigator.pop(context);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Excel guardado en Documents')),
-  );
+  String path = '${directory.path}/Volante_$volante.xlsx';
+  
+  List<int>? fileBytes = excel.save();
+  if (fileBytes != null) {
+    File(path)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(fileBytes);
+      
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Excel guardado en: $path')),
+    );
+  }
 }
 
   // MOSTRAR DATOS DE CARPETA
