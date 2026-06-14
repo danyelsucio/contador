@@ -88,6 +88,16 @@ class DatabaseHelper {
         fecha TEXT
       )
     ''');
+        await db.execute('''
+      CREATE TABLE plantillas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        ruta_local TEXT NOT NULL,
+        drive_id TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        fecha_descarga TEXT
+      )
+    ''');
   }
 
   Future<bool> existeVolante(String volante) async {
