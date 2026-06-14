@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "992297094453",
+    "project_id": "proyecr1-cf853",
+    "storage_bucket": "proyecr1-cf853.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992297094453:android:b6385597ae964bccba507c",
+        "android_client_info": {
+          "package_name": "com.example.contador"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg8InvI-DIPFOzGVvulzXQcy7s3bJzur4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
