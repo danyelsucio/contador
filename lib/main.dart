@@ -11,11 +11,22 @@ import 'drive_helper.dart';
 //imports
 import 'package:csv/csv.dart'; // ← Agrégalo al pubspec.yaml: csv: ^5.1
 
+//copiado nuevo para corregir drive
 List<CameraDescription> cameras = [];
 
 void main() async {
+  // 1. Asegura bindings PRIMERO
   WidgetsFlutterBinding.ensureInitialized();
-  cameras = await availableCameras();
+  
+  // 2. Carga pesada en try/catch y fuera del build
+  try {
+    cameras = await availableCameras();
+  } catch (e) {
+    debugPrint('Error cámaras: $e');
+    cameras = [];
+  }
+  
+  // 3. Corre la app SIN esperar BD ni nada más
   runApp(const MyApp());
 }
 
@@ -30,12 +41,22 @@ class DatabaseHelper {
     _database = await _initDB('fiscalia.db');
     return _database!;
   }
-
+//para reparar drive
   Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = p.join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+  // Mueve el getDatabasesPath a un isolate implícito con await
+  final dbPath = await getDatabasesPath(); // ✅ Ya está en async
+  final path = p.join(dbPath, filePath);
+  
+  // Abre la BD con async/await correcto
+  return await openDatabase(
+    path, 
+    version: 1, 
+    onCreate: _createDB,
+    // Esto evita deadlock si se llama desde main thread
+    singleInstance: true,
+  );
   }
+  
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
@@ -838,9 +859,32 @@ Future<void> _subirListaNube(String nombreLista) async {
   }
 }
 
-// PANTALLA DE INICIO CON BEASTIE
-class BeastieHome extends StatelessWidget {
+
+//nuevo bestiehome
+// Reemplaza tu BeastieHome completo por este
+// Reemplaza tu BeastieHome completo por este
+class BeastieHome extends StatefulWidget {
   const BeastieHome({super.key});
+  
+  @override
+  State<BeastieHome> createState() => _BeastieHomeState();
+}
+
+class _BeastieHomeState extends State<BeastieHome> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Esto mueve cualquier carga pesada DESPUÉS de pintar la UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inicializarDatosPostLogin();
+    });
+  }
+
+  Future<void> _inicializarDatosPostLogin() async {
+    // Si aquí cargas algo de Drive o BD, ponlo con await
+    // await DatabaseHelper.instance.database; // ejemplo
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -868,7 +912,6 @@ class BeastieHome extends StatelessWidget {
     );
   }
 }
-
 // SCANNER - IGUAL QUE EL TUYO
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
