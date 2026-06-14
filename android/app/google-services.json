@@ -14,7 +14,23 @@
       },
       "oauth_client": [
         {
-          "client_id": "992297094453-r253ugsoq0gcl0goi90b2r5dm5ef6cuc.apps.googleusercontent.com",
+          "client_id": "992297094453-kk8d71kufoimlh8onei7fs9cqc68thle.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.contador",
+            "certificate_hash": "c321eef600218e29bce1ba2d1fe5eb8126a531ab"
+          }
+        },
+        {
+          "client_id": "992297094453-mnuvfhiptulcrvngijku3fcutdm617k2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.contador",
+            "certificate_hash": "36bedd014176fd808261e9a04938c23b9ec4b80b"
+          }
+        },
+        {
+          "client_id": "992297094453-vj3c1qul8ar32oupde2v5v5v1p1u3hnr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.contador",
@@ -44,4 +60,4 @@
     }
   ],
   "configuration_version": "1"
-} 
+}
