@@ -7,7 +7,12 @@ class DriveHelper {
   static final _googleSignIn = GoogleSignIn.standard(scopes: [drive.DriveApi.driveFileScope]);
 
   static Future<drive.DriveApi?> getDriveApi() async {
-    final account = await _googleSignIn.signIn();
+    // ✅ PARCHE: Primero intenta reutilizar la sesión que ya tienes
+    GoogleSignInAccount? account = await _googleSignIn.signInSilently();
+    
+    // Si no hay sesión activa, ahora sí pide login
+    account ??= await _googleSignIn.signIn();
+    
     if (account == null) return null;
     
     final authHeaders = await account.authHeaders;
@@ -17,7 +22,7 @@ class DriveHelper {
 
   static Future<void> subirArchivo(String nombre, String contenido, String mimeType) async {
     final driveApi = await getDriveApi();
-    if (driveApi == null) throw Exception('Login cancelado');
+    if (driveApi == null) throw Exception('Login cancelado o sin permisos de Drive');
 
     final media = drive.Media(Stream.value(contenido.codeUnits), contenido.length);
     final driveFile = drive.File()..name = nombre;
