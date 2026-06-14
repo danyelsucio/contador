@@ -367,6 +367,101 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 }
 
+
+    Future<void> _descargarPlantillas(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Buscando plantillas en Drive...')),
+    );
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: [drive.DriveApi.driveReadonlyScope],
+      );
+      
+      final GoogleSignInAccount? account = await googleSignIn.signInSilently();
+      if (account == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Inicia sesión primero')),
+        );
+        return;
+      }
+
+      final authHeaders = await account.authHeaders;
+      final client = GoogleAuthClient(authHeaders);
+      final driveApi = drive.DriveApi(client);
+
+      final folderResult = await driveApi.files.list(
+        q: "mimeType='application/vnd.google-apps.folder' and name='Plantillas' and trashed=false",
+        $fields: "files(id, name)",
+      );
+
+      if (folderResult.files!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Crea carpeta Plantillas en Drive')),
+        );
+        return;
+      }
+
+      final folderId = folderResult.files!.first.id;
+      final filesResult = await driveApi.files.list(
+        q: "'$folderId' in parents and trashed=false",
+        $fields: "files(id, name, mimeType)",
+      );
+
+      if (filesResult.files!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Carpeta Plantillas vacía')),
+        );
+        return;
+      }
+
+      final String savePath = '/storage/emulated/0/Download';
+      int contador = 0;
+      
+      for (var file in filesResult.files!) {
+        drive.Media fileData;
+        String fileName = file.name!;
+        
+        // Google Docs → exportar como .docx
+        if (file.mimeType == 'application/vnd.google-apps.document') {
+          fileData = await driveApi.files.export(
+            file.id!,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          ) as drive.Media;
+          fileName = '${file.name}.docx';
+        } 
+        // Google Sheets → exportar como .xlsx  
+        else if (file.mimeType == 'application/vnd.google-apps.spreadsheet') {
+          fileData = await driveApi.files.export(
+            file.id!,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ) as drive.Media;
+          fileName = '${file.name}.xlsx';
+        }
+        // Archivos normales: PDF, Word, etc
+        else {
+          fileData = await driveApi.files.get(
+            file.id!,
+            downloadOptions: drive.DownloadOptions.fullMedia,
+          ) as drive.Media;
+        }
+
+        final saveFile = File('$savePath/$fileName');
+        final bytes = await fileData.stream.fold<List<int>>([], (p, e) => p..addAll(e));
+        await saveFile.writeAsBytes(bytes);
+        contador++;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Descargadas $contador plantillas en Descargas')),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+    }
 // NUEVA FUNCIÓN: Mostrar lista de Pedidos
 void _mostrarListaPedidos() async {
   List<Map<String, dynamic>> pedidos = await DatabaseHelper.instance.getPedidos();
