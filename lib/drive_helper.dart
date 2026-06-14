@@ -3,9 +3,14 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 class DriveHelper {
+  //agregar web id
   static final _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveFileScope],
-    // 👑 PEGA AQUÍ EL ID DE "Contador Fiscalis Android"
+    scopes: [
+    'email',
+    'https://www.googleapis.com/auth/drive.file', // 👑 Scope completo, no el corto
+    ],
+  // 👑 ID DEL WEB CLIENT NUEVO - ESTE DA EL ACCESS_TOKEN
+    serverClientId: '992297094453-c1rifg3mam23t7qkttkcasvgn9875998.apps.googleusercontent.com',
     clientId: '992297094453-orpa1aqaac72j19fu1u8bncgambr4ivj.apps.googleusercontent.com', 
   );
 
