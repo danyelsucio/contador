@@ -175,6 +175,31 @@ Future<List<Map<String, dynamic>>> getRecibidos() async {
      WHERE r.folio IS NULL
    ''');
  }
+ // PLANTILLAS
+Future<int> guardarPlantilla(String nombre, String rutaLocal, String driveId, String tipo) async {
+  final db = await instance.database;
+  return await db.insert(
+    'plantillas',
+    {
+      'nombre': nombre,
+      'ruta_local': rutaLocal,
+      'drive_id': driveId,
+      'tipo': tipo,
+      'fecha_descarga': DateTime.now().toString()
+    },
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+Future<List<Map<String, dynamic>>> getPlantillas() async {
+  final db = await instance.database;
+  return await db.query('plantillas', orderBy: 'fecha_descarga DESC');
+}
+
+Future<int> borrarPlantilla(int id) async {
+  final db = await instance.database;
+  return await db.delete('plantillas', where: 'id =?', whereArgs: [id]);
+} 
 }
 
 // ============ APP ============
