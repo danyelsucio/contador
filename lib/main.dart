@@ -400,8 +400,8 @@ Future<void> _descargarPlantillas(BuildContext context) async {
     final GoogleSignIn googleSignIn = GoogleSignIn(
       scopes: [drive.DriveApi.driveReadonlyScope],
     );
-
-    final GoogleSignInAccount? account = await googleSignIn.signInSilently();
+    final GoogleSignInAccount? account = await googleSignIn.signIn();
+    
     if (account == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error: Inicia sesión primero')),
