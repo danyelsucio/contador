@@ -8,28 +8,25 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'drive_helper.dart';
-//imports
-import 'package:csv/csv.dart'; // ← Agrégalo al pubspec.yaml: csv: ^5.1
+import 'package:csv/csv.dart';
+// ▼▼ AGREGA ESTOS 3 IMPORTS ▼▼▼
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
+// ▲▲▲ FIN IMPORTS ▲▲▲
 
-//copiado nuevo para corregir drive
 List<CameraDescription> cameras = [];
 
 void main() async {
-  // 1. Asegura bindings PRIMERO
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 2. Carga pesada en try/catch y fuera del build
+
   try {
     cameras = await availableCameras();
   } catch (e) {
     debugPrint('Error cámaras: $e');
     cameras = [];
   }
-  
-  // 3. Corre la app SIN esperar BD ni nada más
+
   runApp(const MyApp());
 }
 
@@ -44,22 +41,18 @@ class DatabaseHelper {
     _database = await _initDB('fiscalia.db');
     return _database!;
   }
-//para reparar drive
+
   Future<Database> _initDB(String filePath) async {
-  // Mueve el getDatabasesPath a un isolate implícito con await
-  final dbPath = await getDatabasesPath(); // ✅ Ya está en async
+  final dbPath = await getDatabasesPath();
   final path = p.join(dbPath, filePath);
-  
-  // Abre la BD con async/await correcto
+
   return await openDatabase(
-    path, 
-    version: 1, 
+    path,
+    version: 1,
     onCreate: _createDB,
-    // Esto evita deadlock si se llama desde main thread
     singleInstance: true,
   );
   }
-  
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
@@ -76,7 +69,7 @@ class DatabaseHelper {
         valor TEXT,
         FOREIGN KEY (volante) REFERENCES carpetas (volante)
       )
-    ''');// agregare lo de pedidos
+    ''');
     await db.execute('''
       CREATE TABLE pedidos (
         folio TEXT PRIMARY KEY NOT NULL,
@@ -127,8 +120,8 @@ class DatabaseHelper {
     final db = await instance.database;
     final result = await db.query('carpetas', orderBy: 'id DESC');
     return result.map((row) => row['volante'] as String).toList();
-  }//agregare tres funciones
-  // PEDIDOS
+  }
+
 Future<int> addPedido(String folio, String volante, String carpeta, String mesa) async {
   final db = await instance.database;
   return await db.insert(
@@ -145,7 +138,6 @@ Future<Map<String, dynamic>?> getPedidoPorFolio(String folio) async {
   return null;
 }
 
-// RECIBIDOS
 Future<int> addRecibido(String folio, String volante, String carpeta, String mesa) async {
   final db = await instance.database;
   return await db.insert(
@@ -165,7 +157,6 @@ Future<List<Map<String, dynamic>>> getRecibidos() async {
   return await db.query('recibidos', orderBy: 'fecha DESC');
 }
 
-// PENDIENTES = Pedidos - Recibidos
  Future<List<Map<String, dynamic>>> getPendientes() async {
    final db = await instance.database;
    return await db.rawQuery('''
@@ -207,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'S_R','COPIAS_AUTENTICAS'
   ];
 
-  // LUPA: DIALOGO WORK/ADD
   void _mostrarDialogoLupa() {
     String volanteInput = '';
     showDialog(
@@ -257,7 +247,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // DIALOGO PARA GUARDAR CAMPOS
   void _mostrarDialogoCampo(String campo) {
     if (volanteActual.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -293,11 +282,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // VER BASE DE DATOS
   void _mostrarBaseDatos() async {
   List<String> volantes = await DatabaseHelper.instance.getTodosVolantes();
 
-  // Contamos cuántos hay en cada tabla para mostrar badge
   int totalPedidos = (await DatabaseHelper.instance.getPedidos()).length;
   int totalRecibidos = (await DatabaseHelper.instance.getRecibidos()).length;
   int totalPendientes = (await DatabaseHelper.instance.getPendientes()).length;
@@ -312,14 +299,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            // LAS 3 CARPETAS FIJAS PRIMERO
             ListTile(
               leading: const Icon(Icons.send, color: Colors.blue),
               title: const Text('PEDIDOS', style: TextStyle(fontWeight: FontWeight.bold)),
               trailing: Text('$totalPedidos', style: const TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(context);
-                _mostrarListaPedidos(); // Nueva función
+                _mostrarListaPedidos();
               },
             ),
             ListTile(
@@ -328,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
               trailing: Text('$totalRecibidos', style: const TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(context);
-                _mostrarListaRecibidos(); // Nueva función
+                _mostrarListaRecibidos();
               },
             ),
             ListTile(
@@ -337,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
               trailing: Text('$totalPendientes', style: const TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(context);
-                _dialogoPendientes(); // Ya la tienes
+                _dialogoPendientes();
               },
             ),
             const Divider(thickness: 2),
@@ -345,8 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text('VOLANTES', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
             ),
-            // LUEGO TODOS LOS VOLANTES
-           ...volantes.map((volante) => ListTile(
+          ...volantes.map((volante) => ListTile(
               title: Text(volante),
               trailing: const Icon(Icons.folder),
               onTap: () async {
@@ -370,102 +355,100 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 }
 
+// ▼▼▼ FUNCIÓN RESTAURADA AQUÍ ▼▼▼
+Future<void> _descargarPlantillas(BuildContext context) async {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Buscando plantillas en Drive...')),
+  );
 
-    Future<void> _descargarPlantillas(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Buscando plantillas en Drive...')),
+  try {
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      scopes: [drive.DriveApi.driveReadonlyScope],
     );
 
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: [drive.DriveApi.driveReadonlyScope],
-      );
-      
-      final GoogleSignInAccount? account = await googleSignIn.signInSilently();
-      if (account == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Inicia sesión primero')),
-        );
-        return;
-      }
-
-      final authHeaders = await account.authHeaders;
-      final client = GoogleAuthClient(authHeaders);
-      final driveApi = drive.DriveApi(client);
-
-      final folderResult = await driveApi.files.list(
-        q: "mimeType='application/vnd.google-apps.folder' and name='Plantillas' and trashed=false",
-        $fields: "files(id, name)",
-      );
-
-      if (folderResult.files!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Crea carpeta Plantillas en Drive')),
-        );
-        return;
-      }
-
-      final folderId = folderResult.files!.first.id;
-      final filesResult = await driveApi.files.list(
-        q: "'$folderId' in parents and trashed=false",
-        $fields: "files(id, name, mimeType)",
-      );
-
-      if (filesResult.files!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Carpeta Plantillas vacía')),
-        );
-        return;
-      }
-
-      final String savePath = '/storage/emulated/0/Download';
-      int contador = 0;
-      
-      for (var file in filesResult.files!) {
-        drive.Media fileData;
-        String fileName = file.name!;
-        
-        // Google Docs → exportar como .docx
-        if (file.mimeType == 'application/vnd.google-apps.document') {
-          fileData = await driveApi.files.export(
-            file.id!,
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          ) as drive.Media;
-          fileName = '${file.name}.docx';
-        } 
-        // Google Sheets → exportar como .xlsx  
-        else if (file.mimeType == 'application/vnd.google-apps.spreadsheet') {
-          fileData = await driveApi.files.export(
-            file.id!,
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          ) as drive.Media;
-          fileName = '${file.name}.xlsx';
-        }
-        // Archivos normales: PDF, Word, etc
-        else {
-          fileData = await driveApi.files.get(
-            file.id!,
-            downloadOptions: drive.DownloadOptions.fullMedia,
-          ) as drive.Media;
-        }
-
-        final saveFile = File('$savePath/$fileName');
-        final bytes = await fileData.stream.fold<List<int>>([], (p, e) => p..addAll(e));
-        await saveFile.writeAsBytes(bytes);
-        contador++;
-      }
-
+    final GoogleSignInAccount? account = await googleSignIn.signInSilently();
+    if (account == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Descargadas $contador plantillas en Descargas')),
+        const SnackBar(content: Text('Error: Inicia sesión primero')),
       );
+      return;
+    }
 
-    } catch (e) {
+    final authHeaders = await account.authHeaders;
+    final client = GoogleAuthClient(authHeaders);
+    final driveApi = drive.DriveApi(client);
+
+    final folderResult = await driveApi.files.list(
+      q: "mimeType='application/vnd.google-apps.folder' and name='Plantillas' and trashed=false",
+      $fields: "files(id, name)",
+    );
+
+    if (folderResult.files!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        const SnackBar(content: Text('Crea carpeta Plantillas en Drive')),
       );
+      return;
     }
+
+    final folderId = folderResult.files!.first.id;
+    final filesResult = await driveApi.files.list(
+      q: "'$folderId' in parents and trashed=false",
+      $fields: "files(id, name, mimeType)",
+    );
+
+    if (filesResult.files!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Carpeta Plantillas vacía')),
+      );
+      return;
     }
-// NUEVA FUNCIÓN: Mostrar lista de Pedidos
+
+    final String savePath = '/storage/emulated/0/Download';
+    int contador = 0;
+
+    for (var file in filesResult.files!) {
+      drive.Media fileData;
+      String fileName = file.name!;
+
+      if (file.mimeType == 'application/vnd.google-apps.document') {
+        fileData = await driveApi.files.export(
+          file.id!,
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ) as drive.Media;
+        fileName = '${file.name}.docx';
+      }
+      else if (file.mimeType == 'application/vnd.google-apps.spreadsheet') {
+        fileData = await driveApi.files.export(
+          file.id!,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ) as drive.Media;
+        fileName = '${file.name}.xlsx';
+      }
+      else {
+        fileData = await driveApi.files.get(
+          file.id!,
+          downloadOptions: drive.DownloadOptions.fullMedia,
+        ) as drive.Media;
+      }
+
+      final saveFile = File('$savePath/$fileName');
+      final bytes = await fileData.stream.fold<List<int>>([], (p, e) => p..addAll(e));
+      await saveFile.writeAsBytes(bytes);
+      contador++;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Descargadas $contador plantillas en Descargas')),
+    );
+
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  }
+}
+// ▲▲▲ FIN FUNCIÓN RESTAURADA ▲▲▲
+
 void _mostrarListaPedidos() async {
   List<Map<String, dynamic>> pedidos = await DatabaseHelper.instance.getPedidos();
   if (!mounted) return;
@@ -476,7 +459,7 @@ void _mostrarListaPedidos() async {
       content: SizedBox(
         width: double.maxFinite,
         child: pedidos.isEmpty
-           ? const Text('No hay pedidos registrados')
+          ? const Text('No hay pedidos registrados')
             : ListView.builder(
                 shrinkWrap: true,
                 itemCount: pedidos.length,
@@ -507,7 +490,6 @@ void _mostrarListaPedidos() async {
   );
 }
 
-// NUEVA FUNCIÓN: Mostrar lista de Recibidos
 void _mostrarListaRecibidos() async {
   List<Map<String, dynamic>> recibidos = await DatabaseHelper.instance.getRecibidos();
   if (!mounted) return;
@@ -518,7 +500,7 @@ void _mostrarListaRecibidos() async {
       content: SizedBox(
         width: double.maxFinite,
         child: recibidos.isEmpty
-           ? const Text('No hay carpetas recibidas')
+          ? const Text('No hay carpetas recibidas')
             : ListView.builder(
                 shrinkWrap: true,
                 itemCount: recibidos.length,
@@ -546,8 +528,6 @@ void _mostrarListaRecibidos() async {
   );
 }
 
-///codigo pegado
-
   void _mostrarDetallesVolante(Map<String, dynamic> carpeta, String volante) {
   showDialog(
     context: context,
@@ -557,7 +537,7 @@ void _mostrarListaRecibidos() async {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: listaCampos.map((campo) { // ← AQUÍ ESTÁ LA MAGIA
+          children: listaCampos.map((campo) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Column(
@@ -568,7 +548,7 @@ void _mostrarListaRecibidos() async {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
                   ),
                   Text(
-                    carpeta[campo]?.toString()?? 'Sin datos', // ← Si no existe, pone "Sin datos"
+                    carpeta[campo]?.toString()?? 'Sin datos',
                     style: const TextStyle(fontSize: 14, color: Colors.black87)
                   ),
                   const Divider(height: 12),
@@ -602,7 +582,6 @@ void _mostrarListaRecibidos() async {
   );
 }
 
-  // DIALOGO PEDIDOS - Llenar 4 campos
 void _dialogoPedidos() {
   String volante = '', carpeta = '', folio = '', mesa = '';
   showDialog(
@@ -639,7 +618,6 @@ void _dialogoPedidos() {
   );
 }
 
-// DIALOGO RECIBIDOS - Solo folio, autocompleta resto
 void _dialogoRecibidos() {
   String folio = '';
   String volante = '', carpeta = '', mesa = '';
@@ -700,7 +678,6 @@ void _dialogoRecibidos() {
   );
 }
 
-// DIALOGO PENDIENTES - Compara pedidos vs recibidos
 void _dialogoPendientes() async {
   List<Map<String, dynamic>> pendientes = await DatabaseHelper.instance.getPendientes();
   if (!mounted) return;
@@ -711,7 +688,7 @@ void _dialogoPendientes() async {
       content: SizedBox(
         width: double.maxFinite,
         child: pendientes.isEmpty
-           ? const Text('No hay pendientes. Todo recibido ✅')
+          ? const Text('No hay pendientes. Todo recibido ✅')
             : ListView.builder(
                 shrinkWrap: true,
                 itemCount: pendientes.length,
@@ -739,7 +716,6 @@ void _dialogoPendientes() async {
   );
 }
 
-// FUNCIÓN NUEVA: Rellena los campos faltantes para Excel/CSV
 Map<String, dynamic> _completarCampos(Map<String, dynamic> carpeta) {
   Map<String, dynamic> completo = {};
   for (var campo in listaCampos) {
@@ -748,55 +724,53 @@ Map<String, dynamic> _completarCampos(Map<String, dynamic> carpeta) {
   return completo;
 }
 
-  // FUNCIÓN PARA CREAR Y GUARDAR EXCEL
 Future<void> _exportarExcel(Map<String, dynamic> datos, String volante) async {
   var excel = Excel.createExcel();
   Sheet sheet = excel['Volante_$volante'];
-  
-  // CORRECCIÓN: Usar TextCellValue para excel 4.0.6
+
   sheet.appendRow([
-    TextCellValue('CAMPO'), 
+    TextCellValue('CAMPO'),
     TextCellValue('VALOR')
   ]);
-  
+
   datos.forEach((key, value) {
     sheet.appendRow([
-      TextCellValue(key), 
-      TextCellValue(value?.toString() ?? 'Sin datos')
+      TextCellValue(key),
+      TextCellValue(value?.toString()?? 'Sin datos')
     ]);
   });
 
   final directory = await getApplicationDocumentsDirectory();
   String path = '${directory.path}/Volante_$volante.xlsx';
-  
+
   List<int>? fileBytes = excel.save();
-  if (fileBytes != null) {
+  if (fileBytes!= null) {
     File(path)
-      ..createSync(recursive: true)
-      ..writeAsBytesSync(fileBytes);
-      
+     ..createSync(recursive: true)
+     ..writeAsBytesSync(fileBytes);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Excel guardado en: $path')),
     );
   }
 }
-//la csv
+
 Future<void> _exportarCsv(Map<String, dynamic> datos, String volante) async {
   try {
     List<List<String>> rows = [];
-    rows.add(['CAMPO', 'VALOR']); // Encabezados
+    rows.add(['CAMPO', 'VALOR']);
     datos.forEach((key, value) {
-      rows.add([key, value?.toString() ?? 'Sin datos']);
+      rows.add([key, value?.toString()?? 'Sin datos']);
     });
 
     String csv = const ListToCsvConverter().convert(rows);
-    
+
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/Volante_$volante.csv';
     final file = File(path);
     await file.writeAsString(csv);
 
-    Navigator.pop(context); // Cierra el diálogo
+    Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('CSV guardado en: $path')),
     );
@@ -807,13 +781,12 @@ Future<void> _exportarCsv(Map<String, dynamic> datos, String volante) async {
   }
 }
 
- // ===== SUBIR A GOOGLE DRIVE =====
 Future<void> _subirVolanteNube(Map<String, dynamic> datos, String volante, String tipo) async {
   try {
     List<List<String>> rows = [['CAMPO', 'VALOR']];
-    datos.forEach((key, value) => rows.add([key, value?.toString() ?? 'Sin datos']));
+    datos.forEach((key, value) => rows.add([key, value?.toString()?? 'Sin datos']));
     String contenido = const ListToCsvConverter().convert(rows);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Subiendo a Drive...')));
     await DriveHelper.subirArchivo('Volante_${volante}_$tipo.csv', contenido, 'text/csv');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Volante $volante subido a Google Drive')));
@@ -839,7 +812,7 @@ Future<void> _subirListaNube(String nombreLista) async {
       rows.add([p['folio'], p['volante'], p['carpeta'], p['mesa'], p['fecha']]);
     }
     String contenido = const ListToCsvConverter().convert(rows);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Subiendo a Drive...')));
     await DriveHelper.subirArchivo('${nombreLista}_${DateTime.now().millisecondsSinceEpoch}.csv', contenido, 'text/csv');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$nombreLista subido a Drive')));
@@ -847,8 +820,7 @@ Future<void> _subirListaNube(String nombreLista) async {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
   }
 }
-  
-  // MOSTRAR DATOS DE CARPETA
+
   void _mostrarDatosCarpeta(String volante, Map<String, String> datos) {
     showDialog(
       context: context,
@@ -918,7 +890,7 @@ Future<void> _subirListaNube(String nombreLista) async {
                  );
                 }
               },
-              
+
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 'Base de datos', child: Text('Base de datos')),
                 const PopupMenuItem(value: 'Campos', child: Text('Campos')),
@@ -943,11 +915,15 @@ Future<void> _subirListaNube(String nombreLista) async {
               if (value == 'Pedidos') _dialogoPedidos();
               if (value == 'Recibidos') _dialogoRecibidos();
               if (value == 'Pendientes') _dialogoPendientes();
+              // ▼▼▼ AGREGA ESTA LÍNEA ▼▼▼
+              if (value == 'Plantillas') await _descargarPlantillas(context);
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'Pedidos', child: Text('Pedidos')),
               const PopupMenuItem(value: 'Recibidos', child: Text('Recibidos')),
               const PopupMenuItem(value: 'Pendientes', child: Text('Pendientes')),
+              // ▼▼▼ AGREGA ESTA LÍNEA ▼▼▼
+              const PopupMenuItem(value: 'Plantillas', child: Text('Plantillas')),
             ],
           ),
         ],
@@ -957,13 +933,9 @@ Future<void> _subirListaNube(String nombreLista) async {
   }
 }
 
-
-//nuevo bestiehome
-// Reemplaza tu BeastieHome completo por este
-// Reemplaza tu BeastieHome completo por este
 class BeastieHome extends StatefulWidget {
   const BeastieHome({super.key});
-  
+
   @override
   State<BeastieHome> createState() => _BeastieHomeState();
 }
@@ -972,15 +944,12 @@ class _BeastieHomeState extends State<BeastieHome> {
   @override
   void initState() {
     super.initState();
-    // ✅ Esto mueve cualquier carga pesada DESPUÉS de pintar la UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _inicializarDatosPostLogin();
     });
   }
 
   Future<void> _inicializarDatosPostLogin() async {
-    // Si aquí cargas algo de Drive o BD, ponlo con await
-    // await DatabaseHelper.instance.database; // ejemplo
   }
 
   @override
@@ -1010,7 +979,7 @@ class _BeastieHomeState extends State<BeastieHome> {
     );
   }
 }
-// SCANNER - IGUAL QUE EL TUYO
+
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
   @override
@@ -1096,7 +1065,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             child: FloatingActionButton(
               onPressed: isBusy? null : _escanear,
               child: isBusy
-                 ? const CircularProgressIndicator(color: Colors.white)
+                ? const CircularProgressIndicator(color: Colors.white)
                   : const Icon(Icons.camera_alt),
             ),
           ),
