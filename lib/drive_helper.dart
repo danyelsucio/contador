@@ -1,16 +1,16 @@
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 
 class DriveHelper {
-  static final _googleSignIn = GoogleSignIn.standard(scopes: [drive.DriveApi.driveFileScope]);
+  static final _googleSignIn = GoogleSignIn(
+    scopes: [drive.DriveApi.driveFileScope],
+    // 👑 PEGA AQUÍ EL ID DE "Contador Fiscalis Android"
+    clientId: '992297094453-orpa1aqaac72j19fu1u8bncgambr4ivj.apps.googleusercontent.com', 
+  );
 
   static Future<drive.DriveApi?> getDriveApi() async {
-    // ✅ PARCHE: Primero intenta reutilizar la sesión que ya tienes
     GoogleSignInAccount? account = await _googleSignIn.signInSilently();
-    
-    // Si no hay sesión activa, ahora sí pide login
     account ??= await _googleSignIn.signIn();
     
     if (account == null) return null;
