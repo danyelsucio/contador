@@ -12,7 +12,20 @@
           "package_name": "com.example.contador"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "992297094453-r253ugsoq0gcl0goi90b2r5dm5ef6cuc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.contador",
+            "certificate_hash": "8c723d7bbadab798571e67079fc4cf95a62bcc83"
+          }
+        },
+        {
+          "client_id": "992297094453-82e364gu8leb58rnf3ru6v3cfkvfrivm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDg8InvI-DIPFOzGVvulzXQcy7s3bJzur4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992297094453-82e364gu8leb58rnf3ru6v3cfkvfrivm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
