@@ -10,6 +10,9 @@ import 'dart:io';
 import 'drive_helper.dart';
 //imports
 import 'package:csv/csv.dart'; // ← Agrégalo al pubspec.yaml: csv: ^5.1
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:http/http.dart' as http;
+import 'package:google_sign_in/google_sign_in.dart';
 
 //copiado nuevo para corregir drive
 List<CameraDescription> cameras = [];
